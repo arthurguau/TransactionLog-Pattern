@@ -1,0 +1,60 @@
+
+
+//-- create debezium-connect
+cd party-debezium-connect
+mvn clean install
+docker build -t party-debezium-connect .
+
+
+//-- bring up Kafka and connector
+docker-compose up -d
+
+
+//-- create Kafka topics
+docker exec -t kafka /usr/bin/kafka-topics \
+      --create --bootstrap-server :9092 \
+      --topic partyEmailChanged \
+      --partitions 1 \
+      --replication-factor 1
+	  
+docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic partyEmailChanged --partitions 1 --replication-factor 1	  
+	  
+      
+docker exec -t kafka /usr/bin/kafka-topics \
+      --create --bootstrap-server :9092 \
+      --topic partyEnrolled \
+      --partitions 1 \
+      --replication-factor 1
+
+docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic partyEnrolled --partitions 1 --replication-factor 1
+
+
+//--
+curl -X POST \
+  http://localhost:8083/connectors/ \
+  -H 'content-type: application/json' \
+  -d '{
+   "name": "party-outbox-connector",
+   "config": {
+      "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+      "tasks.max": "1",
+      "database.hostname": "postgres",
+      "database.port": "5432",
+      "database.user": "user",
+      "database.password": "password",
+      "database.dbname": "partydb",
+      "database.server.name": "pg-outbox-server",
+      "tombstones.on.delete": "false",
+      "table.whitelist": "public.outbox",
+      "transforms": "outbox",
+      "transforms.outbox.type": "com.microservice.party.transform.PartyTransformation"
+   }
+}'
+
+
+
+//-- create party
+curl -X POST http://localhost:8080/parties/~/enroll -H "content-type: application/json" -d '{"name": "Meike", "email": "mike@gmail.com", "address": "Toronto, ON"}'
+
+//-- update party
+curl -X PUT http://localhost:8080/parties/1/update-email -H "content-type: application/json" -d '{"email": "jimmy@gmail.com"}'  
