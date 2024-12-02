@@ -8,6 +8,8 @@ import org.apache.kafka.connect.header.Headers;
 import org.apache.kafka.connect.transforms.Transformation;
 
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The class is configured and invoked when a changes occur on any OutBox Schema.
@@ -15,6 +17,8 @@ import java.util.Map;
  * @author Arthur
  */
 public class PartyTransformation<R extends ConnectRecord<R>> implements Transformation<R> {
+
+    private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /**
      * This method is invoked when a change is made on the outbox schema.
@@ -24,18 +28,28 @@ public class PartyTransformation<R extends ConnectRecord<R>> implements Transfor
      */
     public R apply(R sourceRecord) {
 
+    	System.out.println ("=========================================> sourceRecord: " + sourceRecord.toString());
         Struct kStruct = (Struct) sourceRecord.value();
         String databaseOperation = kStruct.getString("op");
+        System.out.println ("=========================================> KStruct: " + kStruct.toString());
 
         //Handle only the Create's
         if ("c".equalsIgnoreCase(databaseOperation)) {
 
             // Get the details.
             Struct after = (Struct) kStruct.get("after");
+            
+            System.out.println ("=========================================> Struct: " + after.toString());
+
+            
             String UUID = after.getString("uuid");
             String payload = after.getString("payload");
             String eventType = after.getString("event_type").toLowerCase();
             String topic = eventType.toLowerCase();
+
+//            String UUID = "06a988ac-bd5b-49d2-997e-8aef742a5e43";
+//            String topic="partyenrolled";
+//            String payload='{"partyId":1,"name":"Meike","email":"mike@gmail.com","address":"Toronto, ON"}';
 
             Headers headers = sourceRecord.headers();
             headers.addString("eventId", UUID);
@@ -43,6 +57,7 @@ public class PartyTransformation<R extends ConnectRecord<R>> implements Transfor
             // Build the event to be published.
             sourceRecord = sourceRecord.newRecord(topic, null, Schema.STRING_SCHEMA, UUID,
                     null, payload, sourceRecord.timestamp(), headers);
+            logger.info ("Payload: " + payload + " topic: " + topic);
         }
 
         return sourceRecord;

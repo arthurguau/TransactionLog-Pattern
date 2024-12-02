@@ -1,5 +1,12 @@
 package com.microservice.party.service.impl;
 
+import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.microservice.party.dao.PartyRepository;
 import com.microservice.party.dao.entities.PartyEntity;
 import com.microservice.party.dto.EmailChangeDTO;
@@ -9,12 +16,9 @@ import com.microservice.party.dto.PartyMapper;
 import com.microservice.party.outbox.EventPublisher;
 import com.microservice.party.service.PartyService;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
-import javax.transaction.Transactional;
-import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service Implementation that fetches / acts on PartyDTO related data.
@@ -24,6 +28,8 @@ import java.util.Optional;
 @Service
 @Slf4j
 public class PartyServiceImpl implements PartyService {
+	
+	private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /**
      * Handle to the Data Access Layer.
@@ -54,13 +60,19 @@ public class PartyServiceImpl implements PartyService {
      */
     @Override
     public PartyDTO getParty(Integer partyId) throws Exception {
-        log.info("Fetching party details for partyId: {}", partyId);
+        logger.info("Fetching party details for partyId: {}", partyId);
 
         Optional<PartyEntity> partyEntity = partyRepository.findById(partyId);
         PartyDTO partyDTO = null;
 
         if (partyEntity.isPresent()) {
-            partyDTO = PartyMapper.INSTANCE.partyEntityToDTO(partyEntity.get());
+        	
+        	partyDTO =  new PartyDTO();
+        	partyDTO.setName(partyEntity.get().getName());
+        	partyDTO.setEmail(partyEntity.get().getEmail());
+        	partyDTO.setPartyId(partyEntity.get().getPartyId());
+        	partyDTO.setAddress(partyEntity.get().getAddress());
+            //partyDTO = PartyMapper.INSTANCE.partyEntityToDTO(partyEntity.get());
         } else {
             throw new Exception("Party not found");
         }
@@ -77,15 +89,30 @@ public class PartyServiceImpl implements PartyService {
     @Override
     @Transactional
     public PartyDTO enrollParty(EnrollPartyDTO party) throws Exception {
-        log.info("Enroll party details for PartyId: {}", party.getName());
-
-        PartyEntity partyEntity = PartyMapper.INSTANCE.partyDTOToEntity(party);
+        logger.info("Enroll party details for PartyId: {}", party.getName());
+        logger.info(party.toString());
+        
+        //PartyEntity partyEntity = PartyMapper.INSTANCE.partyDTOToEntity(party);
+        PartyEntity partyEntity =  new PartyEntity();
+        partyEntity.setAddress(party.getAddress());
+        partyEntity.setEmail(party.getEmail());
+        partyEntity.setName(party.getName());
+        
+        logger.info(partyEntity.toString());
+        
         partyRepository.save(partyEntity);
 
         //Publish the event
         eventPublisher.fire(EventUtils.createEnrollEvent(partyEntity));
+        
+        PartyDTO partyDTO =  new PartyDTO();
+    	partyDTO.setName(partyEntity.getName());
+    	partyDTO.setEmail(partyEntity.getEmail());
+    	partyDTO.setPartyId(partyEntity.getPartyId());
+    	partyDTO.setAddress(partyEntity.getAddress());        
 
-        return PartyMapper.INSTANCE.partyEntityToDTO(partyEntity);
+        //return PartyMapper.INSTANCE.partyEntityToDTO(partyEntity);
+        return partyDTO;
     }
 
     /**
@@ -98,15 +125,23 @@ public class PartyServiceImpl implements PartyService {
     @Override
     @Transactional
     public PartyDTO updatePartyEmail(Integer partyId, EmailChangeDTO partyEmail) throws Exception {
-        log.info("Update Email to '{}' for PartyId: {}", partyEmail.getEmail(),  partyId);
+        logger.info("Update Email to '{}' for PartyId: {}", partyEmail.getEmail(),  partyId);
 
         PartyEntity partyEntity = partyRepository.getOne(partyId);
         partyEntity.setEmail(partyEmail.getEmail());
-        partyRepository.save(partyEntity);
+        partyEntity = partyRepository.save(partyEntity);
 
         //Publish the event
         eventPublisher.fire(EventUtils.createUpdateEmailEvent(partyEntity));
+        
+        PartyDTO partyDTO =  new PartyDTO();
+    	partyDTO.setName(partyEntity.getName());
+    	partyDTO.setEmail(partyEntity.getEmail());
+    	partyDTO.setPartyId(partyEntity.getPartyId());
+    	partyDTO.setAddress(partyEntity.getAddress());
 
-        return PartyMapper.INSTANCE.partyEntityToDTO(partyEntity);
+        //return PartyMapper.INSTANCE.partyEntityToDTO(partyEntity);
+        return partyDTO;
+        
     }
 }

@@ -25,7 +25,8 @@ public class EventUtils {
 
         return new OutboxEvent(
                 partyEntity.getPartyId(),
-                "PARTY_ENROLLED",
+                //"PARTY_ENROLLED",
+                "partyenrolled",
                 jsonNode
         );
     }

@@ -1,16 +1,56 @@
 
+//-- # reference
+https://dzone.com/articles/implementing-the-outbox-pattern
 
-//-- create debezium-connect
+
+//-- ############################################### --//
+     access postgres
+//-- ############################################### --//
+
+//-- # access docker container
+
+//-- # access postgres database
+psql -U user -d postgres
+
+//-- # connect to parted
+\c partydb
+
+//-- # quit from database
+\q
+
+//-- # Display all tables (aka relations) via \dt or \dt+ for more details
+${userName}=# \dt
+
+//-- # Display details of a particular table.
+${userName}=# \d+ ${table}
+
+//-- # Query (SELECT)
+${userName}=# SELECT * FROM {tableName};
+
+
+
+//-- ############################################### --//
+     create debezium-connect
+//-- ############################################### --//
+
+//-- # create debezium-connect
 cd party-debezium-connect
 mvn clean install
 docker build -t party-debezium-connect .
 
 
-//-- bring up Kafka and connector
+//-- ############################################### --//
+//-- # bring up Kafka and connector
+//-- ############################################### --//
+
+cd ..
 docker-compose up -d
 
+//-- ############################################### --//
+//-- # create topics
+//-- ############################################### --//
 
-//-- create Kafka topics
+//-- # create Kafka topics
 docker exec -t kafka /usr/bin/kafka-topics \
       --create --bootstrap-server :9092 \
       --topic partyEmailChanged \
@@ -18,18 +58,38 @@ docker exec -t kafka /usr/bin/kafka-topics \
       --replication-factor 1
 	  
 docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic partyEmailChanged --partitions 1 --replication-factor 1	  
-	  
-      
+
 docker exec -t kafka /usr/bin/kafka-topics \
       --create --bootstrap-server :9092 \
       --topic partyEnrolled \
       --partitions 1 \
       --replication-factor 1
 
-docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic partyEnrolled --partitions 1 --replication-factor 1
+docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic tinybank.partyenrolled --partitions 1 --replication-factor 1
+
+//-- # list kafka topic
+docker exec -t kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --list
 
 
-//--
+//-- ############################################### --//
+//-- # start up party service
+//-- ############################################### --//
+
+cd party-microservice
+mvn spring-boot:run
+
+//-- ############################################### --//
+//-- # Check database tables
+//-- ############################################### --//
+
+//-- # Query (SELECT)
+${userName}=# SELECT * FROM  outbox;
+
+
+//-- ############################################### --//
+//-- # register connector with Database
+//-- ############################################### --//
+
 curl -X POST \
   http://localhost:8083/connectors/ \
   -H 'content-type: application/json' \
@@ -45,16 +105,36 @@ curl -X POST \
       "database.dbname": "partydb",
       "database.server.name": "pg-outbox-server",
       "tombstones.on.delete": "false",
-      "table.whitelist": "public.outbox",
+      "topic.prefix": "tinybank",
+      "schema.include.list": "public",
+      "table.include.list": "public.outbox",
       "transforms": "outbox",
       "transforms.outbox.type": "com.microservice.party.transform.PartyTransformation"
    }
 }'
 
+//-- ############################################### --//
+//-- # make api call to create parties
+//-- ############################################### --//
+
+//-- # create party
+curl -X POST http://localhost:8080/parties -H "content-type: application/json" -d '{"name": "Meike", "email": "mike@gmail.com", "address": "Toronto, ON"}'
+
+//-- # update party
+curl -X PUT http://localhost:8080/parties/1 -H "content-type: application/json" -d '{"email": "jimmy@gmail.com"}'  
 
 
-//-- create party
-curl -X POST http://localhost:8080/parties/~/enroll -H "content-type: application/json" -d '{"name": "Meike", "email": "mike@gmail.com", "address": "Toronto, ON"}'
+//-- ############################################### --//
+//-- # check topic
+//-- ############################################### --//
 
-//-- update party
-curl -X PUT http://localhost:8080/parties/1/update-email -H "content-type: application/json" -d '{"email": "jimmy@gmail.com"}'  
+//-- # check kafka topic
+docker exec -t kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --list
+docker exec -t kafka /usr/bin/kafka-console-producer --broker-list localhost:9092 --topic tinybank.partyenrolled
+
+//-- # monitor topic
+docker exec -t kafka /usr/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic tinybank.partyenrolled  -from-beginning
+
+
+
+

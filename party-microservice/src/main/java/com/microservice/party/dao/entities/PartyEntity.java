@@ -1,18 +1,32 @@
 package com.microservice.party.dao.entities;
 
-import lombok.Data;
 import org.hibernate.annotations.GenericGenerator;
 
-import javax.persistence.*;
-import java.util.Date;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 
 /**
  * Entity that maps the PARTY table.
  */
-@Data
+//@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "PARTY")
 public class PartyEntity {
+	
+	private static final long serialVersionUID = 100001L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO, generator="seq")
@@ -20,7 +34,7 @@ public class PartyEntity {
     @Column(name = "ID")
     private Integer partyId;
 
-    @Column(name = "NAME")
+	@Column(name = "NAME")
     private String name;
 
     @Column(name = "EMAIL")

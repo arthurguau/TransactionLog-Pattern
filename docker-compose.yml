@@ -12,6 +12,16 @@ services:
       - POSTGRES_USER=user
       - POSTGRES_PASSWORD=password
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin4
+    restart: always
+    ports:
+      - 8888:80
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@funnygorilla.com
+      PGADMIN_DEFAULT_PASSWORD: password
+
   # Install zookeeper. 
   zookeeper:
     container_name: zookeeper
@@ -70,3 +80,4 @@ services:
         --replication-factor 1"
     depends_on:
       - kafka
+

@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
  * - /parties/{partyId}: Gets the Party Details for the given PartyId.
  * <p/>
  *
- * @author Arthur
+ * @author Songqing Gu
  */
 @RestController
 public class PartyController {

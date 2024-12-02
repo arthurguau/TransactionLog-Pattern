@@ -1,16 +1,19 @@
 package com.microservice.party.outbox;
 
+import java.util.Date;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Service;
+
 import com.microservice.party.outbox.dao.OutBoxRepository;
 import com.microservice.party.outbox.models.OutBoxEntity;
 import com.microservice.party.outbox.models.OutboxEvent;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.event.EventListener;
-import org.springframework.stereotype.Service;
-
-import java.util.Date;
-import java.util.UUID;
 
 /**
  * Event Service responsible for persisting the event in the database.
@@ -20,6 +23,8 @@ import java.util.UUID;
 @Service
 @Slf4j
 public class EventService {
+	
+	private Logger logger = LoggerFactory.getLogger(this.getClass());
 
     /**
      * Handle to the Data Access Layer.
@@ -54,7 +59,7 @@ public class EventService {
                 new Date()
         );
 
-        log.info("Handling event : {}.", entity);
+        logger.info("Handling event : {}.", entity);
 
         outBoxRepository.save(entity);
 
@@ -62,6 +67,6 @@ public class EventService {
          * Delete the event once written, so that the outbox doesn't grow.
          * The CDC eventing polls the database log entry and not the table in the database.
          */
-        outBoxRepository.delete(entity);
+        //outBoxRepository.delete(entity);
     }
 }
