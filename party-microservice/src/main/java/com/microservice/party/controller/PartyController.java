@@ -68,4 +68,17 @@ public class PartyController {
     public PartyDTO updatePartyEmail(@PathVariable Integer partyId, @RequestBody EmailChangeDTO partyEmail) throws Exception {
         return this.partyService.updatePartyEmail(partyId, partyEmail);
     }
+    
+    /**
+     * Updates the party for the given partyId.
+     *
+     * @param partyId
+     * @param partyEmail
+     * @return PartyDTO
+     */
+    @DeleteMapping(value = "/parties/{partyId}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    public void deleteParty(@PathVariable Integer partyId) throws Exception {
+        this.partyService.deleteParty(partyId);
+    }
+   
 }

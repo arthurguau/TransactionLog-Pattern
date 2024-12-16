@@ -1,6 +1,7 @@
 
 //-- # reference
 https://dzone.com/articles/implementing-the-outbox-pattern
+https://debezium.io/documentation/reference/3.0/connectors/postgresql.html
 
 
 //-- ############################################### --//
@@ -10,7 +11,7 @@ https://dzone.com/articles/implementing-the-outbox-pattern
 //-- # access docker container
 
 //-- # access postgres database
-psql -U user -d postgres
+psql -U user -d partydb
 
 //-- # connect to parted
 \c partydb
@@ -53,19 +54,13 @@ docker-compose up -d
 //-- # create Kafka topics
 docker exec -t kafka /usr/bin/kafka-topics \
       --create --bootstrap-server :9092 \
-      --topic partyEmailChanged \
+      --topic PARTY_EVENT \
       --partitions 1 \
       --replication-factor 1
 	  
-docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic partyEmailChanged --partitions 1 --replication-factor 1	  
+docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic PARTY_EVENT --partitions 1 --replication-factor 1
+docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic tinybank.PARTY_EVENT --partitions 1 --replication-factor 1
 
-docker exec -t kafka /usr/bin/kafka-topics \
-      --create --bootstrap-server :9092 \
-      --topic partyEnrolled \
-      --partitions 1 \
-      --replication-factor 1
-
-docker exec -t kafka /usr/bin/kafka-topics --create --bootstrap-server :9092 --topic tinybank.partyenrolled --partitions 1 --replication-factor 1
 
 //-- # list kafka topic
 docker exec -t kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --list
@@ -118,10 +113,10 @@ curl -X POST \
 //-- ############################################### --//
 
 //-- # create party
-curl -X POST http://localhost:8080/parties -H "content-type: application/json" -d '{"name": "Meike", "email": "mike@gmail.com", "address": "Toronto, ON"}'
+curl -X POST http://localhost:8099/parties -H "content-type: application/json" -d '{"name": "Meike", "email": "mike@gmail.com", "address": "Toronto, ON"}'
 
 //-- # update party
-curl -X PUT http://localhost:8080/parties/1 -H "content-type: application/json" -d '{"email": "jimmy@gmail.com"}'  
+curl -X PUT http://localhost:8099/parties/1 -H "content-type: application/json" -d '{"email": "jimmy@gmail.com"}'  
 
 
 //-- ############################################### --//
@@ -130,11 +125,14 @@ curl -X PUT http://localhost:8080/parties/1 -H "content-type: application/json" 
 
 //-- # check kafka topic
 docker exec -t kafka /usr/bin/kafka-topics --bootstrap-server localhost:9092 --list
-docker exec -t kafka /usr/bin/kafka-console-producer --broker-list localhost:9092 --topic tinybank.partyenrolled
+docker exec -t kafka /usr/bin/kafka-console-producer --broker-list localhost:9092 --topic tinybank.party_enrolled
 
 //-- # monitor topic
-docker exec -t kafka /usr/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic tinybank.partyenrolled  -from-beginning
+
+docker exec -t kafka /usr/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic PARTY_EVENT  -from-beginning
+docker exec -t kafka /usr/bin/kafka-console-consumer --bootstrap-server localhost:9092 --topic tinybank.PARTY_EVENT  -from-beginning
 
 
+//-- ###################### End #################### --//
 
 

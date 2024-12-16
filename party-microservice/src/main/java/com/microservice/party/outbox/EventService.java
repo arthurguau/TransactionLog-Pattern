@@ -55,7 +55,7 @@ public class EventService {
                 uuid,
                 event.getAggregateId(),
                 event.getEventType(),
-                event.getPayload().toString(),
+                event.getPayload(), 
                 new Date()
         );
 

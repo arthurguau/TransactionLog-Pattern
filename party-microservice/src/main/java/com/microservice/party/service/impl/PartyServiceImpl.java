@@ -100,7 +100,7 @@ public class PartyServiceImpl implements PartyService {
         
         logger.info(partyEntity.toString());
         
-        partyRepository.save(partyEntity);
+        partyEntity = partyRepository.save(partyEntity);
 
         //Publish the event
         eventPublisher.fire(EventUtils.createEnrollEvent(partyEntity));
@@ -141,7 +141,22 @@ public class PartyServiceImpl implements PartyService {
     	partyDTO.setAddress(partyEntity.getAddress());
 
         //return PartyMapper.INSTANCE.partyEntityToDTO(partyEntity);
-        return partyDTO;
-        
+        return partyDTO;       
     }
+    
+    /**
+     * 
+     */
+    @Override
+    @Transactional
+    public void deleteParty(Integer partyId) throws Exception {
+        logger.info("delete PartyId: {}",  partyId);
+
+        PartyEntity partyEntity = partyRepository.getOne(partyId);
+        
+        partyRepository.deleteById(partyEntity.getPartyId());
+
+        //Publish the event
+        eventPublisher.fire(EventUtils.deletePartyEvent(partyEntity));     
+    }    
 }

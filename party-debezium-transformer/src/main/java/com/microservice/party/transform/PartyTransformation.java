@@ -28,39 +28,53 @@ public class PartyTransformation<R extends ConnectRecord<R>> implements Transfor
      */
     public R apply(R sourceRecord) {
 
-    	System.out.println ("=========================================> sourceRecord: " + sourceRecord.toString());
+        logger.info ("===> incoming sourceRecord: " + sourceRecord.toString());
         Struct kStruct = (Struct) sourceRecord.value();
+        R newSourceRecord = null;
+        
+        /*
+         * operation includes create (event type include - c,u,d)
+         */
         String databaseOperation = kStruct.getString("op");
-        System.out.println ("=========================================> KStruct: " + kStruct.toString());
-
+        logger.info ("****> database Operation: " + databaseOperation);
+        
         //Handle only the Create's
         if ("c".equalsIgnoreCase(databaseOperation)) {
 
             // Get the details.
             Struct after = (Struct) kStruct.get("after");
-            
-            System.out.println ("=========================================> Struct: " + after.toString());
-
-            
             String UUID = after.getString("uuid");
-            String payload = after.getString("payload");
-            String eventType = after.getString("event_type").toLowerCase();
-            String topic = eventType.toLowerCase();
+            
+            //String payload = after.getString("payload");
+            Object payload = after.getWithoutDefault("payload");
+            
+            String eventType = after.getString("event_type").trim().toUpperCase();
+            
+            // Set event type as topic name
+            String topic = "PARTY_EVENT";
 
-//            String UUID = "06a988ac-bd5b-49d2-997e-8aef742a5e43";
-//            String topic="partyenrolled";
-//            String payload='{"partyId":1,"name":"Meike","email":"mike@gmail.com","address":"Toronto, ON"}';
-
+            // set up headers
             Headers headers = sourceRecord.headers();
+            headers.addString("eventType", eventType);
             headers.addString("eventId", UUID);
 
             // Build the event to be published.
-            sourceRecord = sourceRecord.newRecord(topic, null, Schema.STRING_SCHEMA, UUID,
-                    null, payload, sourceRecord.timestamp(), headers);
-            logger.info ("Payload: " + payload + " topic: " + topic);
+            newSourceRecord = 
+                sourceRecord.newRecord(
+                    topic, 
+                    null, 
+                    Schema.STRING_SCHEMA, 
+                    UUID,
+                    null, 
+                    payload, 
+                    sourceRecord.timestamp(), 
+                    headers);
+            
+            logger.info("===> outgoing sourceRecord: " + newSourceRecord.toString());
+            logger.info ("Event type: " +  eventType + " Payload: " + payload + " topic: " + topic);
         }
 
-        return sourceRecord;
+        return newSourceRecord;
     }
 
     public ConfigDef config() {

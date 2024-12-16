@@ -36,4 +36,14 @@ public interface PartyService {
      * @return PartyDTO
      */
     PartyDTO updatePartyEmail(Integer partyId, EmailChangeDTO partyEmail) throws Exception;
+
+    /**
+     * Updates the Party Email for the given partyId.
+     *
+     * @param partyId
+     * @param partyEmail
+     * @return PartyDTO
+     */
+    void deleteParty(Integer partyId) throws Exception;
+    
 }
